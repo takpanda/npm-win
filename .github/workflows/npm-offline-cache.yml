@@ -1,4 +1,4 @@
-name: Build offline vitest cache (Windows)
+name: Build offline npm cache (Windows)
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
     paths:
       - package.json
       - package-lock.json
-      - .github/workflows/vitest-offline-cache.yml
+      - .github/workflows/npm-offline-cache.yml
 
 permissions:
   contents: read
@@ -20,8 +20,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup Node.js 22
-        # vitest@5 requires node ^22.12.0 || ^24 || >=26.
-        # "22" resolves to the latest Node 22 minor (always >= 22.12), satisfying engines.
+        # vitest@5 requires node ^22.12.0 || ^24 || >=26; playwright@1.63 requires node >=20.
+        # "22" resolves to the latest Node 22 minor (always >= 22.12), satisfying both engines.
         # Build the cache with the SAME Node major the offline target uses (v22.12+).
         # Node 22 ships npm v10.x, which reads the cache format produced here.
         uses: actions/setup-node@v4
@@ -44,20 +44,23 @@ jobs:
           npm ci --offline --no-audit --no-fund
           echo "offline npm ci OK"
 
-      - name: Smoke test vitest in offline state
+      - name: Smoke test vitest and playwright in offline state
         shell: bash
-        run: npx vitest --version
+        run: |
+          npx vitest --version
+          npx playwright --version
+          echo "offline smoke tests OK"
 
       - name: Pack offline assets
         shell: bash
         run: |
-          mkdir -p vitest-offline-win
-          cp package.json package-lock.json vitest-offline-win/
-          tar -czf vitest-offline-win/npm-cache.tar.gz -C "${{ steps.cachepath.outputs.npm-cache }}" .
+          mkdir -p npm-offline-win
+          cp package.json package-lock.json npm-offline-win/
+          tar -czf npm-offline-win/npm-cache.tar.gz -C "${{ steps.cachepath.outputs.npm-cache }}" .
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: vitest-offline-windows
-          path: vitest-offline-win/
+          name: npm-offline-windows
+          path: npm-offline-win/
           retention-days: 30
