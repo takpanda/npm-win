@@ -1,5 +1,5 @@
 node_modules/
 npm-cache/
-vitest-offline-win/
+npm-offline-win/
 *.tgz
 .DS_Store

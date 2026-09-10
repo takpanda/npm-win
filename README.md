@@ -1,16 +1,16 @@
 # npm-win
 
-Windows 上で vitest を**完全オフライン**でインストールするための資源を、GitHub Actions で生成するリポジトリです。
+Windows 上で **vitest / playwright** を**完全オフライン**でインストールするための資源を、GitHub Actions で生成するリポジトリです。
 
 ## 何ができるか
 
 `push`（`package.json` / `package-lock.json` の変更時）または手動の `Run workflow` で、
-**`vitest-offline-windows`** という名前のアーティファクトを生成します。
+**`npm-offline-windows`** という名前のアーティファクトを生成します。
 
 アーティファクトの中身:
 
 ```
-vitest-offline-win/
+npm-offline-win/
 ├── package.json          # 依存定義と同一のもの
 ├── package-lock.json     # ロックファイル（platform 非依存で全バイナリ込み）
 └── npm-cache.tar.gz      # npm キャッシュ一式（npm config get cache の丸ごと）
@@ -20,13 +20,13 @@ vitest-offline-win/
 
 1. Windows ランナーで `npm ci` し、npm キャッシュを充填
 2. そのキャッシュだけを使って `npm ci --offline` で依存を再構築（オフラインで成立することを CI 内で確認）
-3. `npx vitest --version` で vitest がオフライン状態で起動することを確認
+3. `npx vitest --version` / `npx playwright --version` で両ツールがオフライン状態で起動することを確認
 
-つまり「このアーティファクトを持っていけばオフラインでも vitest を入れられる」ということが、生成時点で保証されています。
+つまり「このアーティファクトを持っていけばオフラインでも vitest / playwright を入れられる」ということが、生成時点で保証されています。
 
 ## オフライン環境（Windows）での使い方
 
-1. アーティファクト `vitest-offline-windows` をダウンロードして任意の場所に展開
+1. アーティファクト `npm-offline-windows` をダウンロードして任意の場所に展開
 2. `npm-cache.tar.gz` を展開してキャッシュフォルダを作る
 3. npm にそのキャッシュを使わせる:
 
@@ -45,9 +45,18 @@ vitest-offline-win/
 
    `npm ci` は lockfile を完全に信頼するので、ネット接続がなくてもキャッシュから確実に再現されます。
 
+5. ツールの起動確認（インストール後、ブラウザ取得は不要）:
+
+   ```powershell
+   npx vitest --version
+   npx playwright --version
+   ```
+
 ## メモ
 
+- 含まれる依存は `vitest@5.0.0` と `playwright@1.63.0` の2つです。playwright のブラウザバイナリは**含まれません**（npm パッケージのみ）。ブラウザが必要な場合はオフライン先で別途取得してください。
 - vitest は `^22.12.0 || ^24 || >=26` の Node を要求します。
-  **Node 22 系でお使いの場合は v22.12 以上が必須**です（22.11 以前では動きません）。オフライン先では `node -v` で 22.12+ を確認してください。
+  **Node 22 系でお使いの場合は v22.12 以上が必須**です（22.11 以前では動きません）。オフライン先では `node -v` で 22.12+ を確認してください。playwright は `node >= 20` を要求します。
 - このワークフローは `node-version: 22` でキャッシュを生成します。`setup-node@v4` の `22` は Node 22 の最新マイナーを引くので常に 22.12 以上が保証され、オフライン先の Node 22 系と互換です。
-- Windows ランナーで生成するため、ネイティブバイナリ（`@rolldown/binding-win32-x64-msvc`, `lightningcss-win32-x64-msvc`）が含まれます。**64bit の Windows** を対象としています。
+- Windows ランナーで生成するため、ネイティブバイナリ（`@rolldown/binding-win32-x64-msvc`, `lightningcss-win32-x64-msvc` 等）が含まれます。**64bit の Windows** を対象としています。
+- ※ v0.1.0 までは `vitest-offline-windows` という名前のアーティファクトを生成していました。`npm-offline-windows` に改名しました。
