@@ -1,0 +1,60 @@
+name: Build offline vitest cache (Windows)
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - package.json
+      - package-lock.json
+      - .github/workflows/vitest-offline-cache.yml
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        # vitest@5 requires node ^22.12.0 || ^24 || >=26
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Resolve npm cache path
+        id: cachepath
+        shell: bash
+        run: echo "npm-cache=$(npm config get cache)" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies (populate npm cache)
+        run: npm ci --no-audit --no-fund
+
+      - name: Verify offline install works from populated cache
+        shell: bash
+        run: |
+          rm -rf node_modules
+          export NPM_CONFIG_CACHE="${{ steps.cachepath.outputs.npm-cache }}"
+          npm ci --offline --no-audit --no-fund
+          echo "offline npm ci OK"
+
+      - name: Smoke test vitest in offline state
+        shell: bash
+        run: npx vitest --version
+
+      - name: Pack offline assets
+        shell: bash
+        run: |
+          mkdir -p vitest-offline-win
+          cp package.json package-lock.json vitest-offline-win/
+          tar -czf vitest-offline-win/npm-cache.tar.gz -C "${{ steps.cachepath.outputs.npm-cache }}" .
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vitest-offline-windows
+          path: vitest-offline-win/
+          retention-days: 30

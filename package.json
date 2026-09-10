@@ -1,0 +1,12 @@
+{
+  "name": "npm-win",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline npm install assets for Windows (vitest).",
+  "scripts": {
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "vitest": "5.0.0"
+  }
+}
